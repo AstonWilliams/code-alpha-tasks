@@ -1,0 +1,234 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}{{ conversation.group_name }}{% endblock %}
+
+{% block content %}
+<div class="conversation-container" data-conversation-id="{{ conversation.id }}">
+    <div class="conversation-header">
+        <div class="conversation-header-left">
+            <a href="{% url 'messages' %}" class="back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="conversation-info">
+                <img src="{{ conversation.group_image.url|default:'/static/images/group-default.jpg' }}" 
+                     alt="{{ conversation.group_name }}" class="conversation-avatar">
+                <div class="conversation-details">
+                    <h2 class="conversation-name">{{ conversation.group_name }}</h2>
+                    <p class="conversation-members">{{ conversation.participants.count }} members</p>
+                </div>
+            </div>
+        </div>
+        <div class="conversation-header-right">
+            <button class="group-info-btn" onclick="toggleGroupInfo()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="19" cy="12" r="1"/>
+                    <circle cx="5" cy="12" r="1"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="messages-container">
+        <div class="messages-list">
+            {% for message in messages %}
+            <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                {% if message.sender != request.user %}
+                <img src="{{ message.sender.profile_picture.url|default:'/static/images/default-avatar.jpg' }}" 
+                     alt="{{ message.sender.username }}" class="message-avatar">
+                {% endif %}
+                <div class="message-bubble">
+                    {% if message.sender != request.user %}
+                    <div class="message-sender">{{ message.sender.username }}</div>
+                    {% endif %}
+                    <div class="message-content">{{ message.text }}</div>
+                    <div class="message-time">{{ message.created_at|date:"H:i" }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="message-input-container">
+        <div class="message-input-wrapper">
+            <input type="text" class="message-input" placeholder="Message...">
+            <button class="send-message-btn" disabled>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Group Info Sidebar -->
+<div class="group-info-sidebar" id="groupInfoSidebar">
+    <div class="group-info-header">
+        <h3>Group Info</h3>
+        <button class="close-group-info" onclick="toggleGroupInfo()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    <div class="group-info-content">
+        <div class="group-info-section">
+            <img src="{{ conversation.group_image.url|default:'/static/images/group-default.jpg' }}" 
+                 alt="{{ conversation.group_name }}" class="group-info-image">
+            <h2 class="group-info-name">{{ conversation.group_name }}</h2>
+            <p class="group-info-created">Created {{ conversation.created_at|date:"M d, Y" }}</p>
+        </div>
+
+        {% if conversation.admin == request.user %}
+        <div class="group-info-section">
+            <h4>Group Settings</h4>
+            <button class="group-action-btn" onclick="editGroupInfo()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit Group Info
+            </button>
+            <button class="group-action-btn" onclick="addMembers()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+                Add Members
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="group-info-section">
+            <h4>Members ({{ conversation.participants.count }})</h4>
+            <div class="group-members-list">
+                {% for participant in conversation.participants.all %}
+                <div class="group-member-item" data-username="{{ participant.username }}">
+                    <img src="{{ participant.profile_picture.url|default:'/static/images/default-avatar.jpg' }}" 
+                         alt="{{ participant.username }}" class="group-member-avatar">
+                    <div class="group-member-info">
+                        <div class="group-member-username">{{ participant.username }}</div>
+                        {% if participant == conversation.admin %}
+                        <div class="group-member-role">Admin</div>
+                        {% endif %}
+                    </div>
+                    {% if conversation.admin == request.user and participant != request.user %}
+                    <div class="group-member-actions">
+                        <button class="remove-member-btn" onclick="removeMemberFromGroup('{{ participant.username }}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="group-info-section">
+            {% if conversation.admin == request.user %}
+            <button class="group-action-btn danger" onclick="deleteGroup()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3,6 5,6 21,6"/>
+                    <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"/>
+                </svg>
+                Delete Group
+            </button>
+            {% else %}
+            <button class="group-action-btn danger" onclick="leaveGroup()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Leave Group
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleGroupInfo() {
+    const sidebar = document.getElementById('groupInfoSidebar');
+    sidebar.classList.toggle('active');
+}
+
+function editGroupInfo() {
+    // Implementation for editing group info
+    showNotification('Edit group info functionality coming soon!', 'info');
+}
+
+function addMembers() {
+    // Implementation for adding members
+    showNotification('Add members functionality coming soon!', 'info');
+}
+
+function removeMemberFromGroup(username) {
+    if (confirm(`Remove ${username} from the group?`)) {
+        const conversationId = document.querySelector('[data-conversation-id]').dataset.conversationId;
+        
+        makeAjaxRequest('/ajax/remove-group-member/', {
+            conversation_id: conversationId,
+            username: username
+        }, function(response) {
+            if (response.success) {
+                const memberElement = document.querySelector(`[data-username="${username}"]`);
+                if (memberElement) {
+                    memberElement.remove();
+                }
+                showNotification(`${username} removed from group`, 'success');
+                
+                // Update member count
+                const memberCount = document.querySelector('.conversation-members');
+                const currentCount = parseInt(memberCount.textContent);
+                memberCount.textContent = `${currentCount - 1} members`;
+            } else {
+                showNotification('Failed to remove member', 'error');
+            }
+        });
+    }
+}
+
+function leaveGroup() {
+    if (confirm('Are you sure you want to leave this group?')) {
+        const conversationId = document.querySelector('[data-conversation-id]').dataset.conversationId;
+        
+        makeAjaxRequest('/ajax/leave-group/', {
+            conversation_id: conversationId
+        }, function(response) {
+            if (response.success) {
+                window.location.href = '/messages/';
+            } else {
+                showNotification('Failed to leave group', 'error');
+            }
+        });
+    }
+}
+
+function deleteGroup() {
+    if (confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+        const conversationId = document.querySelector('[data-conversation-id]').dataset.conversationId;
+        
+        makeAjaxRequest('/ajax/delete-group/', {
+            conversation_id: conversationId
+        }, function(response) {
+            if (response.success) {
+                window.location.href = '/messages/';
+            } else {
+                showNotification('Failed to delete group', 'error');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

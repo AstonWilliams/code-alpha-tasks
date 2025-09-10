@@ -1,0 +1,123 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}Edit Profile • Instagram{% endblock %}
+
+{% block content %}
+<div class="edit-profile-container">
+    <div class="edit-profile-sidebar">
+        <nav class="edit-nav">
+            <a href="{% url 'core:edit_profile' %}" class="edit-nav-item active">Edit Profile</a>
+            <a href="#" class="edit-nav-item">Change Password</a>
+            <a href="#" class="edit-nav-item">Privacy and Security</a>
+        </nav>
+    </div>
+
+    <div class="edit-profile-content">
+        <form method="post" enctype="multipart/form-data" class="edit-form">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-label">
+                    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                         alt="{{ user.username }}" class="edit-avatar">
+                </div>
+                <div class="form-field">
+                    <h2>{{ user.username }}</h2>
+                    <label for="profile_picture" class="change-photo-btn">Change Profile Photo</label>
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*" style="display: none;">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="form-label">Name</label>
+                <div class="form-field">
+                    <input type="text" name="first_name" value="{{ user.first_name }}" class="edit-input">
+                    <div class="form-help">
+                        Help people discover your account by using the name you're known by: either your full name, nickname, or business name.
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="form-label">Username</label>
+                <div class="form-field">
+                    <input type="text" value="{{ user.username }}" class="edit-input" disabled>
+                    <div class="form-help">
+                        In most cases, you'll be able to change your username back to {{ user.username }} for another 14 days.
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="form-label">Website</label>
+                <div class="form-field">
+                    <input type="url" name="website" value="{{ user.website }}" class="edit-input">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="form-label">Bio</label>
+                <div class="form-field">
+                    <textarea name="bio" class="edit-textarea" maxlength="150">{{ user.bio }}</textarea>
+                    <div class="form-help">
+                        <span class="char-count">{{ user.bio|length }}/150</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="form-label">Email</label>
+                <div class="form-field">
+                    <input type="email" value="{{ user.email }}" class="edit-input" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="form-label">Phone Number</label>
+                <div class="form-field">
+                    <input type="tel" name="phone_number" value="{{ user.phone_number }}" class="edit-input">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-label"></div>
+                <div class="form-field">
+                    <button type="submit" class="submit-btn">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Character counter for bio
+    const bioTextarea = document.querySelector('textarea[name="bio"]');
+    const charCount = document.querySelector('.char-count');
+    
+    if (bioTextarea && charCount) {
+        bioTextarea.addEventListener('input', function() {
+            const length = this.value.length;
+            charCount.textContent = `${length}/150`;
+        });
+    }
+
+    // Profile picture preview
+    const profilePictureInput = document.getElementById('profile_picture');
+    const avatarImg = document.querySelector('.edit-avatar');
+    
+    if (profilePictureInput && avatarImg) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarImg.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+</script>
+{% endblock %}

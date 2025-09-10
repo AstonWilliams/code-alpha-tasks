@@ -1,0 +1,152 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}Create Group{% endblock %}
+
+{% block content %}
+<div class="create-group-container">
+    <div class="create-group-header">
+        <a href="{% url 'messages' %}" class="back-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <h1>New Group</h1>
+        <button type="submit" form="createGroupForm" class="create-btn">Create</button>
+    </div>
+
+    <form id="createGroupForm" method="post" enctype="multipart/form-data" class="create-group-form">
+        {% csrf_token %}
+        
+        <div class="group-image-section">
+            <div class="group-image-upload">
+                <input type="file" id="groupImage" name="group_image" accept="image/*" style="display: none;">
+                <label for="groupImage" class="group-image-label">
+                    <div class="group-image-placeholder">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <span>Add Group Photo</span>
+                    </div>
+                    <img id="groupImagePreview" style="display: none;" alt="Group preview">
+                </label>
+            </div>
+        </div>
+
+        <div class="group-name-section">
+            <input type="text" name="group_name" placeholder="Group name" class="group-name-input" required maxlength="100">
+        </div>
+
+        <div class="members-section">
+            <h3>Add Members</h3>
+            <div class="member-search">
+                <input type="text" class="member-search-input" placeholder="Search users...">
+                <div class="member-search-results"></div>
+            </div>
+            
+            <div class="selected-members">
+                <h4>Selected Members</h4>
+                <div class="selected-members-list"></div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const groupImageInput = document.getElementById('groupImage');
+    const groupImagePreview = document.getElementById('groupImagePreview');
+    const groupImagePlaceholder = document.querySelector('.group-image-placeholder');
+    const memberSearchInput = document.querySelector('.member-search-input');
+    const selectedMembersList = document.querySelector('.selected-members-list');
+    let selectedMembers = [];
+
+    // Group image preview
+    groupImageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                groupImagePreview.src = e.target.result;
+                groupImagePreview.style.display = 'block';
+                groupImagePlaceholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Member search
+    let searchTimeout;
+    memberSearchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length > 1) {
+            searchTimeout = setTimeout(() => {
+                searchMembers(query);
+            }, 300);
+        } else {
+            document.querySelector('.member-search-results').innerHTML = '';
+        }
+    });
+
+    function searchMembers(query) {
+        makeAjaxRequest('/ajax/search-users/', { query: query }, function(response) {
+            const resultsContainer = document.querySelector('.member-search-results');
+            
+            if (response.users.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">No users found</div>';
+                return;
+            }
+
+            resultsContainer.innerHTML = response.users.map(user => `
+                <div class="member-search-item" onclick="addMember('${user.username}', '${user.full_name || ''}', '${user.profile_picture || '/static/images/default-avatar.jpg'}')">
+                    <img src="${user.profile_picture || '/static/images/default-avatar.jpg'}" alt="${user.username}" class="member-avatar">
+                    <div class="member-info">
+                        <div class="member-username">${user.username}</div>
+                        <div class="member-fullname">${user.full_name || ''}</div>
+                    </div>
+                    ${selectedMembers.includes(user.username) ? '<span class="member-selected">✓</span>' : ''}
+                </div>
+            `).join('');
+        });
+    }
+
+    window.addMember = function(username, fullName, profilePicture) {
+        if (selectedMembers.includes(username)) return;
+
+        selectedMembers.push(username);
+        
+        const memberHtml = `
+            <div class="selected-member" data-username="${username}">
+                <img src="${profilePicture}" alt="${username}" class="selected-member-avatar">
+                <div class="selected-member-info">
+                    <div class="selected-member-username">${username}</div>
+                    <div class="selected-member-fullname">${fullName}</div>
+                </div>
+                <button type="button" class="remove-member-btn" onclick="removeMember('${username}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <input type="hidden" name="members" value="${username}">
+            </div>
+        `;
+        
+        selectedMembersList.insertAdjacentHTML('beforeend', memberHtml);
+        memberSearchInput.value = '';
+        document.querySelector('.member-search-results').innerHTML = '';
+    };
+
+    window.removeMember = function(username) {
+        const memberElement = document.querySelector(`[data-username="${username}"]`);
+        if (memberElement) {
+            memberElement.remove();
+            selectedMembers = selectedMembers.filter(member => member !== username);
+        }
+    };
+});
+</script>
+{% endblock %}

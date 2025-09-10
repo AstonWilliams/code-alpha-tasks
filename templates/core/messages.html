@@ -1,0 +1,422 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}Inbox • Direct{% endblock %}
+
+{% block content %}
+<div class="messages-container">
+    <div class="messages-sidebar">
+        <div class="messages-header">
+            <div class="messages-user">
+                <span class="username">{{ user.username }}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3l1.09 3.26L16 4l-2.26 1.09L17 8l-3.26-1.09L12 10l-1.09-3.26L8 8l2.26-1.09L7 4l3.26 1.09L12 3z"/>
+                </svg>
+            </div>
+            <button class="new-message-btn" onclick="openNewMessageModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3h18v18H3zM21 9l-9 6-9-6"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="messages-search">
+            <input type="text" placeholder="Search" class="search-messages-input">
+        </div>
+
+        <div class="conversations-list">
+            {% for conversation in conversations %}
+            <div class="conversation-item {% if forloop.first %}active{% endif %}" 
+                 data-conversation-id="{{ conversation.id }}"
+                 onclick="selectConversation({{ conversation.id }})">
+                <div class="conversation-avatar">
+                    {% if conversation.is_group %}
+                        <img src="{% if conversation.group_image %}{{ conversation.group_image.url }}{% else %}/static/images/group-default.jpg{% endif %}" 
+                             alt="{{ conversation.group_name }}">
+                    {% else %}
+                        {% for participant in conversation.participants.all %}
+                            {% if participant != user %}
+                                <img src="{% if participant.profile_picture %}{{ participant.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                                     alt="{{ participant.username }}">
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="conversation-info">
+                    <div class="conversation-name">
+                        {% if conversation.is_group %}
+                            {{ conversation.group_name }}
+                        {% else %}
+                            {% for participant in conversation.participants.all %}
+                                {% if participant != user %}
+                                    {{ participant.username }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="conversation-preview">
+                        {% with conversation.messages.last as last_message %}
+                            {% if last_message %}
+                                <span class="message-sender">
+                                    {% if last_message.sender == user %}You:{% else %}{{ last_message.sender.username }}:{% endif %}
+                                </span>
+                                <span class="message-text">{{ last_message.text|truncatechars:30 }}</span>
+                                <span class="message-time">{{ last_message.created_at|timesince }} ago</span>
+                            {% else %}
+                                <span class="no-messages">No messages yet</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+                {% if conversation.has_unread %}
+                <div class="unread-indicator"></div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="no-conversations">
+                <div class="no-conversations-icon">
+                    <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h2>Your Messages</h2>
+                <p>Send private photos and messages to a friend or group.</p>
+                <button class="send-message-btn" onclick="openNewMessageModal()">Send Message</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="messages-main">
+        {% if conversations %}
+            <div class="chat-header">
+                <div class="chat-user-info">
+                    <div class="chat-avatar">
+                        {% with conversations.first as conversation %}
+                            {% if conversation.is_group %}
+                                <img src="{% if conversation.group_image %}{{ conversation.group_image.url }}{% else %}/static/images/group-default.jpg{% endif %}" 
+                                     alt="{{ conversation.group_name }}">
+                            {% else %}
+                                {% for participant in conversation.participants.all %}
+                                    {% if participant != user %}
+                                        <img src="{% if participant.profile_picture %}{{ participant.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                                             alt="{{ participant.username }}">
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="chat-details">
+                        {% with conversations.first as conversation %}
+                            <div class="chat-name">
+                                {% if conversation.is_group %}
+                                    {{ conversation.group_name }}
+                                {% else %}
+                                    {% for participant in conversation.participants.all %}
+                                        {% if participant != user %}
+                                            {{ participant.username }}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            {% if conversation.is_group %}
+                                <div class="chat-members">
+                                    {{ conversation.participants.count }} members
+                                </div>
+                            {% else %}
+                                <div class="chat-status">Active now</div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+                
+                <div class="chat-actions">
+                    <button class="chat-action-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                    </button>
+                    <button class="chat-action-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="23 7 16 12 23 17 23 7"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                    </button>
+                    <button class="chat-action-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="1"/>
+                            <circle cx="19" cy="12" r="1"/>
+                            <circle cx="5" cy="12" r="1"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                <!-- Messages will be loaded here -->
+            </div>
+
+            <div class="message-input-area">
+                <div class="message-input-container">
+                    <button class="attachment-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                    </button>
+                    
+                    <input type="text" 
+                           placeholder="Message..." 
+                           class="message-input" 
+                           id="messageInput"
+                           maxlength="1000">
+                    
+                    <button class="emoji-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                            <line x1="9" y1="9" x2="9.01" y2="9"/>
+                            <line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                    </button>
+                    
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        {% else %}
+            <div class="no-conversation-selected">
+                <div class="no-conversation-icon">
+                    <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h2>Your Messages</h2>
+                <p>Send private photos and messages to a friend or group.</p>
+                <button class="send-message-btn" onclick="openNewMessageModal()">Send Message</button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- New Message Modal -->
+<div class="new-message-modal" id="newMessageModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>New Message</h2>
+            <button class="close-modal-btn" onclick="closeNewMessageModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="18" x2="6" y1="6" y2="18"/>
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="6" x2="18" y1="6" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="recipient-search">
+                <label>To:</label>
+                <input type="text" placeholder="Search..." class="recipient-input" id="recipientInput">
+            </div>
+            
+            <div class="suggested-users" id="suggestedUsers">
+                <!-- Suggested users will be populated here -->
+            </div>
+            
+            <div class="selected-recipients" id="selectedRecipients">
+                <!-- Selected recipients will appear here -->
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="chat-btn" id="chatBtn" onclick="startConversation()" disabled>Chat</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentConversationId = {% if conversations %}{{ conversations.first.id }}{% else %}null{% endif %};
+    let selectedRecipients = [];
+
+    // Load messages for current conversation
+    if (currentConversationId) {
+        loadMessages(currentConversationId);
+    }
+
+    function selectConversation(conversationId) {
+        // Update active conversation
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-conversation-id="${conversationId}"]`).classList.add('active');
+        
+        currentConversationId = conversationId;
+        loadMessages(conversationId);
+    }
+
+    function loadMessages(conversationId) {
+        fetch(`/messages/${conversationId}/`)
+            .then(response => response.text())
+            .then(html => {
+                // Extract messages from the response
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const messagesArea = document.getElementById('messagesArea');
+                
+                // This would typically load messages via AJAX
+                // For now, we'll simulate with placeholder messages
+                messagesArea.innerHTML = `
+                    <div class="messages-list">
+                        <div class="message received">
+                            <div class="message-content">Hey! How are you?</div>
+                            <div class="message-time">2:30 PM</div>
+                        </div>
+                        <div class="message sent">
+                            <div class="message-content">I'm good! Just working on some projects. How about you?</div>
+                            <div class="message-time">2:32 PM</div>
+                        </div>
+                        <div class="message received">
+                            <div class="message-content">Same here! Want to grab coffee later?</div>
+                            <div class="message-time">2:35 PM</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Scroll to bottom
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            });
+    }
+
+    function sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const text = messageInput.value.trim();
+        
+        if (!text || !currentConversationId) return;
+        
+        // Add message to UI immediately
+        const messagesArea = document.getElementById('messagesArea');
+        const messagesList = messagesArea.querySelector('.messages-list');
+        
+        const messageHtml = `
+            <div class="message sent">
+                <div class="message-content">${text}</div>
+                <div class="message-time">now</div>
+            </div>
+        `;
+        
+        messagesList.insertAdjacentHTML('beforeend', messageHtml);
+        messageInput.value = '';
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+        
+        // Send to server
+        makeAjaxRequest('/ajax/send-message/', {
+            conversation_id: currentConversationId,
+            text: text
+        }, function(response) {
+            if (response.success) {
+                // Message sent successfully
+                console.log('Message sent');
+            }
+        });
+    }
+
+    // Message input handlers
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    if (messageInput) {
+        messageInput.addEventListener('input', () => {
+            if (messageInput.value.trim()) {
+                sendBtn.classList.add('active');
+            } else {
+                sendBtn.classList.remove('active');
+            }
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && messageInput.value.trim()) {
+                sendMessage();
+            }
+        });
+    }
+
+    // New message modal functions
+    function openNewMessageModal() {
+        document.getElementById('newMessageModal').style.display = 'flex';
+        loadSuggestedUsers();
+    }
+
+    function closeNewMessageModal() {
+        document.getElementById('newMessageModal').style.display = 'none';
+        selectedRecipients = [];
+        updateSelectedRecipients();
+    }
+
+    function loadSuggestedUsers() {
+        // This would typically load from server
+        const suggestedUsers = document.getElementById('suggestedUsers');
+        suggestedUsers.innerHTML = `
+            <div class="suggested-user" onclick="selectRecipient('john_doe', 'John Doe')">
+                <img src="/static/images/default-avatar.jpg" alt="John Doe">
+                <div class="user-info">
+                    <div class="username">john_doe</div>
+                    <div class="fullname">John Doe</div>
+                </div>
+            </div>
+            <div class="suggested-user" onclick="selectRecipient('jane_smith', 'Jane Smith')">
+                <img src="/static/images/default-avatar.jpg" alt="Jane Smith">
+                <div class="user-info">
+                    <div class="username">jane_smith</div>
+                    <div class="fullname">Jane Smith</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function selectRecipient(username, fullname) {
+        if (!selectedRecipients.find(r => r.username === username)) {
+            selectedRecipients.push({ username, fullname });
+            updateSelectedRecipients();
+            updateChatButton();
+        }
+    }
+
+    function removeRecipient(username) {
+        selectedRecipients = selectedRecipients.filter(r => r.username !== username);
+        updateSelectedRecipients();
+        updateChatButton();
+    }
+
+    function updateSelectedRecipients() {
+        const container = document.getElementById('selectedRecipients');
+        container.innerHTML = selectedRecipients.map(recipient => `
+            <div class="selected-recipient">
+                <span>${recipient.username}</span>
+                <button onclick="removeRecipient('${recipient.username}')">×</button>
+            </div>
+        `).join('');
+    }
+
+    function updateChatButton() {
+        const chatBtn = document.getElementById('chatBtn');
+        chatBtn.disabled = selectedRecipients.length === 0;
+    }
+
+    function startConversation() {
+        if (selectedRecipients.length === 0) return;
+        
+        // Create new conversation
+        const usernames = selectedRecipients.map(r => r.username);
+        
+        makeAjaxRequest('/ajax/create-conversation/', {
+            participants: usernames
+        }, function(response) {
+            if (response.success) {
+                window.location.href = `/messages/${response.conversation_id}/`;
+            }
+        });
+    }
+</script>
+{% endblock %}

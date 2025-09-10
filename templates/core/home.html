@@ -1,0 +1,142 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}Instagram{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <div class="main-content">
+        <!-- Stories section -->
+        <div class="stories-container">
+            <div class="stories-scroll">
+                <div class="story-item add-story">
+                    <div class="story-avatar">
+                        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" alt="Your story">
+                        <div class="add-story-icon">+</div>
+                    </div>
+                    <span class="story-username">Your story</span>
+                </div>
+                <!-- Add more story items here -->
+            </div>
+        </div>
+
+        <!-- Posts feed -->
+        <div class="posts-feed">
+            {% for post in posts %}
+            <article class="post" data-post-id="{{ post.id }}">
+                <header class="post-header">
+                    <div class="post-user-info">
+                        <img src="{% if post.user.profile_picture %}{{ post.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                             alt="{{ post.user.username }}" class="post-avatar">
+                        <a href="{% url 'core:profile' post.user.username %}" class="post-username">{{ post.user.username }}</a>
+                    </div>
+                    <button class="post-options">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="1.5"/>
+                            <circle cx="6" cy="12" r="1.5"/>
+                            <circle cx="18" cy="12" r="1.5"/>
+                        </svg>
+                    </button>
+                </header>
+
+                <div class="post-image">
+                    <img src="{{ post.image.url }}" alt="Post by {{ post.user.username }}">
+                </div>
+
+                <div class="post-actions">
+                    <div class="post-actions-left">
+                        <button class="action-btn like-btn" onclick="likePost({{ post.id }})">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn comment-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn share-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"/>
+                                <circle cx="6" cy="12" r="3"/>
+                                <circle cx="18" cy="19" r="3"/>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="action-btn save-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="19 21 12 16 5 21 5 5 19 5 19 21"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="post-info">
+                    <div class="post-likes">
+                        <span class="like-count">{{ post.likes_count }}</span> likes
+                    </div>
+                    
+                    {% if post.caption %}
+                    <div class="post-caption">
+                        <a href="{% url 'core:profile' post.user.username %}" class="caption-username">{{ post.user.username }}</a>
+                        <span class="caption-text">{{ post.caption }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="post-comments">
+                        <a href="{% url 'core:post_detail' post.id %}" class="view-comments">
+                            View all {{ post.comments_count }} comments
+                        </a>
+                    </div>
+
+                    <div class="post-time">
+                        {{ post.created_at|timesince }} ago
+                    </div>
+                </div>
+
+                <div class="add-comment">
+                    <input type="text" placeholder="Add a comment..." class="comment-input">
+                    <button class="post-comment-btn">Post</button>
+                </div>
+            </article>
+            {% empty %}
+            <div class="no-posts">
+                <h2>Welcome to Instagram</h2>
+                <p>When you follow people, you'll see the photos and videos they post here.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="user-info">
+            <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                 alt="{{ user.username }}" class="sidebar-avatar">
+            <div class="user-details">
+                <a href="{% url 'core:profile' user.username %}" class="sidebar-username">{{ user.username }}</a>
+                <span class="sidebar-fullname">{{ user.get_full_name|default:user.username }}</span>
+            </div>
+        </div>
+
+        <div class="suggestions">
+            <div class="suggestions-header">
+                <span>Suggestions For You</span>
+                <a href="{% url 'core:explore' %}">See All</a>
+            </div>
+            
+            {% for suggested_user in suggested_users %}
+            <div class="suggestion-item" data-username="{{ suggested_user.username }}">
+                <img src="{% if suggested_user.profile_picture %}{{ suggested_user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                     alt="{{ suggested_user.username }}" class="suggestion-avatar">
+                <div class="suggestion-info">
+                    <a href="{% url 'core:profile' suggested_user.username %}" class="suggestion-username">{{ suggested_user.username }}</a>
+                    <span class="suggestion-reason">Suggested for you</span>
+                </div>
+                <button class="follow-btn" onclick="followUser('{{ suggested_user.username }}')">Follow</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

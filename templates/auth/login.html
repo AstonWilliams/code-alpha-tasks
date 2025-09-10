@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Login • Instagram{% endblock %}
+
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-wrapper">
+        <!-- Phone mockup section -->
+        <div class="phone-mockup">
+            <div class="phone-frame">
+                <img src="/static/images/phone-frame.png" alt="Phone" class="phone-image">
+                <div class="phone-screenshots">
+                    <img src="/static/images/screenshot1.jpg" alt="Screenshot 1" class="screenshot active">
+                    <img src="/static/images/screenshot2.jpg" alt="Screenshot 2" class="screenshot">
+                    <img src="/static/images/screenshot3.jpg" alt="Screenshot 3" class="screenshot">
+                </div>
+            </div>
+        </div>
+
+        <!-- Login form section -->
+        <div class="auth-forms">
+            <div class="auth-box">
+                <div class="logo-container">
+                    <h1 class="logo">Instagram</h1>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-error">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input 
+                            type="text" 
+                            name="username" 
+                            placeholder="Phone number, username, or email"
+                            class="form-input"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <input 
+                            type="password" 
+                            name="password" 
+                            placeholder="Password"
+                            class="form-input"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-primary">Log in</button>
+                </form>
+
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <a href="#" class="facebook-login">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                    Log in with Facebook
+                </a>
+
+                <a href="#" class="forgot-password">Forgot password?</a>
+            </div>
+
+            <div class="auth-box signup-box">
+                <p>Don't have an account? <a href="{% url 'core:register' %}">Sign up</a></p>
+            </div>
+
+            <div class="app-download">
+                <p>Get the app.</p>
+                <div class="download-buttons">
+                    <a href="#" class="download-btn">
+                        <img src="/static/images/app-store.jpg" alt="Download on App Store">
+                    </a>
+                    <a href="#" class="download-btn">
+                        <img src="/static/images/google-play.jpg" alt="Get it on Google Play">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Rotate screenshots
+    const screenshots = document.querySelectorAll('.screenshot');
+    let currentIndex = 0;
+
+    setInterval(() => {
+        screenshots[currentIndex].classList.remove('active');
+        currentIndex = (currentIndex + 1) % screenshots.length;
+        screenshots[currentIndex].classList.add('active');
+    }, 3000);
+</script>
+{% endblock %}
