@@ -1,3 +1,4 @@
+import uuid
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -7,11 +8,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q, Count, Exists, OuterRef
 from .models import User, Post, Comment, Like, Follow, Conversation, Message, Notification, CommentLike, SavedPost, Share, Story
 from django.core.files.storage import default_storage
+from django.http import JsonResponse, HttpResponseRedirect
 from django.core.files.base import ContentFile
 import os
 from PIL import Image
 import json
 import logging
+from django.urls import reverse
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -109,18 +112,8 @@ def create_post(request):
         alt_text = request.POST.get('alt_text', '')
         hide_counts = request.POST.get('hide_counts') == 'on'
         disable_comments = request.POST.get('disable_comments') == 'on'
-        media = request.FILES.get('media')  # Single input for image or video
+        media = request.FILES.get('media')
         
-        logger.debug("Form data: %s", {
-            'caption': caption,
-            'alt_text': alt_text,
-            'hide_counts': hide_counts,
-            'disable_comments': disable_comments,
-            'media': media.name if media else None,
-            'media_type': media.content_type if media else None,
-            'media_size': media.size if media else None
-        })
-
         if not media:
             logger.warning("No media file provided")
             error_msg = 'Please select an image or video'
@@ -130,96 +123,47 @@ def create_post(request):
             return render(request, 'core/create_post.html')
 
         try:
-            # Create post without saving media yet
-            post = Post.objects.create(
-                user=request.user,
-                caption=caption,
-                alt_text=alt_text,
-                hide_counts=hide_counts,
-                disable_comments=disable_comments
-            )
-
-            # Handle image
-            if media.content_type.startswith('image/'):
-                if media.size > 10 * 1024 * 1024:  # 10MB limit
-                    logger.warning("Image too large: %s bytes", media.size)
-                    post.delete()
-                    error_msg = 'Image file too large. Maximum size is 10MB.'
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({'success': False, 'error': error_msg})
-                    messages.error(request, error_msg)
-                    return render(request, 'core/create_post.html')
-
-                try:
-                    img = Image.open(media)
-                    if img.width > 1080 or img.height > 1080:
-                        img.thumbnail((1080, 1080), Image.Resampling.LANCZOS)
-                        output = BytesIO()
-                        img.save(output, format='JPEG', quality=85)
-                        output.seek(0)
-                        post.image.save(media.name, ContentFile(output.read()), save=False)
-                    else:
-                        post.image = media
-                except Exception as e:
-                    logger.error("Image processing error: %s", str(e))
-                    post.delete()
-                    error_msg = 'Invalid image file.'
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({'success': False, 'error': error_msg})
-                    messages.error(request, error_msg)
-                    return render(request, 'core/create_post.html')
-
-            # Handle video
-            elif media.content_type.startswith('video/'):
-                if media.size > 100 * 1024 * 1024:  # 100MB limit
-                    logger.warning("Video too large: %s bytes", media.size)
-                    post.delete()
-                    error_msg = 'Video file too large. Maximum size is 100MB.'
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({'success': False, 'error': error_msg})
-                    messages.error(request, error_msg)
-                    return render(request, 'core/create_post.html')
-
-                allowed_video_types = ['video/mp4', 'video/webm', 'video/ogg', 'video/mov', 'video/avi']
-                if media.content_type not in allowed_video_types:
-                    logger.warning("Invalid video format: %s", media.content_type)
-                    post.delete()
-                    error_msg = 'Invalid video format. Please use MP4, WebM, OGG, MOV, or AVI.'
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({'success': False, 'error': error_msg})
-                    messages.error(request, error_msg)
-                    return render(request, 'core/create_post.html')
-
-                post.video = media
-
+            # Determine if the file is an image or video
+            post_kwargs = {
+                'user': request.user,
+                'caption': caption,
+                'alt_text': alt_text,
+                'hide_counts': hide_counts,
+                'disable_comments': disable_comments
+            }
+            
+            if media.content_type.startswith('image'):
+                post_kwargs['image'] = media
+            elif media.content_type.startswith('video'):
+                post_kwargs['video'] = media
             else:
-                logger.warning("Invalid media type: %s", media.content_type)
-                post.delete()
-                error_msg = 'Invalid media type. Please upload an image or video.'
+                logger.warning(f"Invalid media type: {media.content_type}")
+                error_msg = 'Invalid file type. Please upload an image or video.'
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'success': False, 'error': error_msg})
                 messages.error(request, error_msg)
                 return render(request, 'core/create_post.html')
 
-            post.save()
-            request.user.posts_count += 1
-            request.user.save()
-            logger.info("Post created successfully: %s", post.id)
+            # Save post to database
+            from .models import Post
+            post = Post.objects.create(**post_kwargs)
+            logger.info(f"Post created successfully: {post.id}")
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': True, 'redirect': reverse('core:home')})
-            return redirect('core:home')
+                return JsonResponse({
+                    'success': True,
+                    'redirect': reverse('core:home')
+                })
+            return HttpResponseRedirect(reverse('core:home'))
 
         except Exception as e:
-            logger.error("Error creating post: %s", str(e))
-            post.delete()
+            logger.error(f"Error creating post: {str(e)}")
             error_msg = f"Failed to create post: {str(e)}"
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': error_msg})
             messages.error(request, error_msg)
             return render(request, 'core/create_post.html')
 
-    logger.debug("Rendering create_post.html for GET request")
     return render(request, 'core/create_post.html')
 
 @login_required

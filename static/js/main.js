@@ -483,6 +483,118 @@ function sendMessage(conversationId, text) {
   )
 }
 
+// ----------------------------------------------------------------------------------
+// Main JavaScript functionality
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOMContentLoaded: Script loaded");
+
+    // Form validation for auth forms
+    const forms = document.querySelectorAll(".auth-form");
+    forms.forEach((form) => {
+        console.log("Found auth form:", form);
+        const inputs = form.querySelectorAll(".form-input");
+        const submitBtn = form.querySelector(".btn-primary");
+
+        function validateForm() {
+            let isValid = true;
+            inputs.forEach((input) => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                }
+            });
+            if (submitBtn) {
+                submitBtn.disabled = !isValid;
+                console.log("Auth form validation:", { isValid, submitBtnDisabled: submitBtn.disabled });
+            }
+        }
+
+        inputs.forEach((input) => {
+            input.addEventListener("input", () => {
+                console.log("Auth input changed:", input.name, input.value);
+                validateForm();
+            });
+        });
+        validateForm();
+    });
+
+    // Auto-hide alerts
+    const alerts = document.querySelectorAll(".alert");
+    alerts.forEach((alert) => {
+        console.log("Found alert:", alert.textContent);
+        setTimeout(() => {
+            alert.style.opacity = "0";
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
+
+    // Existing event listeners
+    initializeLikeStates();
+    initializeFollowStates();
+    setupCommentHandlers();
+    setupDoubleTapLike();
+    initializeMessaging();
+
+    const newMessageBtn = document.querySelector(".new-message-btn");
+    if (newMessageBtn) {
+        newMessageBtn.addEventListener("click", () => {
+            console.log("New message button clicked");
+            startNewConversation();
+        });
+    }
+
+    const closeModalBtn = document.querySelector(".close-modal");
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener("click", () => {
+            console.log("Close modal button clicked");
+            closeNewMessageModal();
+        });
+    }
+
+    const userSearchInput = document.querySelector(".user-search-input");
+    if (userSearchInput) {
+        let searchTimeout;
+        userSearchInput.addEventListener("input", (e) => {
+            console.log("User search input:", e.target.value);
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchUsers(e.target.value.trim());
+            }, 300);
+        });
+    }
+
+    const modal = document.getElementById("newMessageModal");
+    if (modal) {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                console.log("Clicked outside modal");
+                closeNewMessageModal();
+            }
+        });
+    }
+
+    initializeVideoPlayersFunc();
+    initializeSettingsTabsFunc();
+    initializeMobileNavigationFunc();
+    setupShareFunctionalityFunc();
+
+    if ("ontouchstart" in window) {
+        initializeTouchGesturesFunc();
+    }
+
+    const imageInputs = document.querySelectorAll('input[type="file"][data-preview-container]');
+    imageInputs.forEach((input) => {
+        const previewContainerId = input.dataset.previewContainer;
+        const previewContainer = document.getElementById(previewContainerId);
+        if (previewContainer) {
+            input.addEventListener("change", () => {
+                console.log("Image input changed:", input.files);
+                handleImagePreview(input, previewContainer);
+            });
+        }
+    });
+});
+// ----------------------------------------------------------------------------------
+
 function showNotification(message, type = "info") {
   // Remove existing notifications
   const existingNotifications = document.querySelectorAll(".notification")
@@ -1231,128 +1343,7 @@ function handleImagePreview(input, previewContainer) {
         reader.readAsDataURL(file);
     }
 }
-// ----------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------
-// Main JavaScript functionality
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("DOMContentLoaded: Script loaded");
-    const createPostForm = document.querySelector(".create-post-form");
-    const mediaInput = document.querySelector("#mediaInput");
-    const shareBtn = document.querySelector(".share-btn");
-    const nextBtn = document.querySelector(".next-btn");
-    const backBtn = document.querySelector(".back-btn");
-    const postUploadSection = document.querySelector(".post-upload");
-    const postDetailsSection = document.querySelector(".post-details");
 
-    console.log("Post creation elements:", {
-        createPostForm: !!createPostForm,
-        mediaInput: !!mediaInput,
-        shareBtn: !!shareBtn,
-        nextBtn: !!nextBtn,
-        backBtn: !!backBtn,
-        postUploadSection: !!postUploadSection,
-        postDetailsSection: !!postDetailsSection
-    });
-
-    if (createPostForm && mediaInput && shareBtn && nextBtn && backBtn && postUploadSection && postDetailsSection) {
-        console.log("Setting up post creation listeners");
-        shareBtn.disabled = true;
-
-        mediaInput.addEventListener("change", () => {
-            const hasFile = mediaInput.files.length > 0;
-            console.log("Media input changed:", {
-                hasFile,
-                fileName: hasFile ? mediaInput.files[0].name : null,
-                fileType: hasFile ? mediaInput.files[0].type : null,
-                fileSize: hasFile ? mediaInput.files[0].size : null
-            });
-            shareBtn.disabled = !hasFile || postDetailsSection.classList.contains("hidden");
-            if (hasFile) {
-                handleImagePreview(mediaInput, document.getElementById("mediaPreview"));
-            }
-        });
-
-        nextBtn.addEventListener("click", () => {
-            console.log("Next button clicked");
-            if (mediaInput.files.length > 0) {
-                postUploadSection.classList.add("hidden");
-                postDetailsSection.classList.remove("hidden");
-                shareBtn.disabled = false;
-                console.log("Switched to post-details section");
-            } else {
-                showNotification("Please select an image or video", "error");
-                console.log("Next button: No file selected");
-            }
-        });
-
-        backBtn.addEventListener("click", () => {
-            console.log("Back button clicked");
-            postDetailsSection.classList.add("hidden");
-            postUploadSection.classList.remove("hidden");
-            shareBtn.disabled = true;
-            console.log("Switched to post-upload section");
-        });
-
-        createPostForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-            console.log("Form submission triggered");
-            if (!mediaInput.files.length) {
-                showNotification("Please select an image or video", "error");
-                console.log("Form submission: No file selected");
-                return;
-            }
-            const formData = new FormData(createPostForm);
-            console.log("Form data:", Array.from(formData.entries()));
-            shareBtn.disabled = true;
-
-            fetch("/create-post/", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRFToken": getCookie("csrftoken"),
-                },
-            })
-                .then((response) => {
-                    console.log("Fetch response:", {
-                        status: response.status,
-                        statusText: response.statusText
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    console.log("JSON response:", data);
-                    if (data.success) {
-                        console.log("Post created, redirecting to:", data.redirect);
-                        window.location.href = data.redirect;
-                    } else {
-                        showNotification(data.error || "Failed to create post", "error");
-                        console.log("Post creation failed:", data.error);
-                        shareBtn.disabled = false;
-                    }
-                })
-                .catch((error) => {
-                    console.error("Fetch error:", error);
-                    showNotification("An error occurred while posting: " + error.message, "error");
-                    shareBtn.disabled = false;
-                });
-        });
-    } else {
-        console.error("Missing post creation elements:", {
-            createPostForm: !!createPostForm,
-            mediaInput: !!mediaInput,
-            shareBtn: !!shareBtn,
-            nextBtn: !!nextBtn,
-            backBtn: !!backBtn,
-            postUploadSection: !!postUploadSection,
-            postDetailsSection: !!postDetailsSection
-        });
-    }
-});
-// ----------------------------------------------------------------------------------
 // Call the functions with different names
 function initializeAll() {
   initializeLikeStates();
