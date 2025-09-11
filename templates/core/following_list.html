@@ -1,0 +1,39 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}{{ profile_user.username }} • Following{% endblock %}
+
+{% block content %}
+<div class="following-container">
+    <div class="following-modal">
+        <div class="modal-header">
+            <h2>Following</h2>
+            <button class="close-btn" onclick="window.history.back()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="18" x2="6" y1="6" y2="18"/>
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="6" x2="18" y1="6" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="following-list">
+            {% for follow in following %}
+            <div class="following-item">
+                <div class="following-info">
+                    <img src="{% if follow.following.profile_picture %}{{ follow.following.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                         alt="{{ follow.following.username }}" class="following-avatar">
+                    <div class="following-details">
+                        <a href="{% url 'core:profile' follow.following.username %}" class="following-username">{{ follow.following.username }}</a>
+                        <span class="following-name">{{ follow.following.get_full_name }}</span>
+                    </div>
+                </div>
+                <button class="unfollow-btn" data-username="{{ follow.following.username }}">Unfollow</button>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Not following anyone yet</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

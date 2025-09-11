@@ -8,13 +8,14 @@
         <!-- Stories section -->
         <div class="stories-container">
             <div class="stories-scroll">
-                <div class="story-item add-story">
+                <!-- Added clickable link to create story functionality -->
+                <a href="{% url 'core:create_story' %}" class="story-item add-story">
                     <div class="story-avatar">
                         <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" alt="Your story">
                         <div class="add-story-icon">+</div>
                     </div>
                     <span class="story-username">Your story</span>
-                </div>
+                </a>
                 <!-- Add more story items here -->
             </div>
         </div>

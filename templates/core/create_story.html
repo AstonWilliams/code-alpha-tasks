@@ -1,0 +1,106 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}Add to your story • Instagram{% endblock %}
+
+{% block content %}
+<div class="create-story-container">
+    <div class="create-story-modal">
+        <div class="modal-header">
+            <h2>Add to your story</h2>
+            <button class="close-btn" onclick="window.history.back()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="18" x2="6" y1="6" y2="18"/>
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="6" x2="18" y1="6" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="create-story-form" id="createStoryForm">
+            {% csrf_token %}
+            
+            <div class="story-upload-section">
+                <div class="story-upload-area" id="storyUploadArea">
+                    <div class="upload-icon">
+                        <svg width="96" height="77" viewBox="0 0 96 77" fill="currentColor">
+                            <path d="M43.5 0h9v77h-9V0z"/>
+                            <path d="M0 33.5h96v9H0v-9z"/>
+                        </svg>
+                    </div>
+                    <h3>Add photo or video to your story</h3>
+                    <button type="button" class="select-btn" onclick="document.getElementById('storyMediaInput').click()">
+                        Select from computer
+                    </button>
+                    <input type="file" id="storyMediaInput" accept="image/*,video/*" style="display: none;">
+                </div>
+                
+                <div class="story-preview-section" id="storyPreviewSection" style="display: none;">
+                    <div class="story-preview-container">
+                        <img id="storyImagePreview" src="/placeholder.svg" alt="Story preview" style="display: none;">
+                        <video id="storyVideoPreview" style="display: none;" controls>
+                            <source src="/placeholder.svg" type="video/mp4">
+                        </video>
+                        
+                        <div class="story-text-overlay">
+                            <textarea name="text" placeholder="Add text to your story..." class="story-text-input" maxlength="200"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="story-actions">
+                        <button type="submit" class="share-story-btn">Share to Story</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const storyMediaInput = document.getElementById('storyMediaInput');
+    const storyUploadArea = document.getElementById('storyUploadArea');
+    const storyPreviewSection = document.getElementById('storyPreviewSection');
+    const storyImagePreview = document.getElementById('storyImagePreview');
+    const storyVideoPreview = document.getElementById('storyVideoPreview');
+
+    storyMediaInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleStoryMediaSelect(e.target.files[0]);
+        }
+    });
+
+    function handleStoryMediaSelect(file) {
+        const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+        
+        const isVideo = validVideoTypes.includes(file.type);
+        const isImage = validImageTypes.includes(file.type);
+        
+        if (!isImage && !isVideo) {
+            alert('Please select a valid image or video file');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target.result;
+            
+            if (isVideo) {
+                storyVideoPreview.src = result;
+                storyVideoPreview.style.display = 'block';
+                storyImagePreview.style.display = 'none';
+                storyMediaInput.name = 'video';
+            } else {
+                storyImagePreview.src = result;
+                storyImagePreview.style.display = 'block';
+                storyVideoPreview.style.display = 'none';
+                storyMediaInput.name = 'image';
+            }
+            
+            storyUploadArea.style.display = 'none';
+            storyPreviewSection.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+</script>
+{% endblock %}

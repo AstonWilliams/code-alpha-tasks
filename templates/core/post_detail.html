@@ -3,121 +3,153 @@
 {% block title %}{{ post.user.username }} on Instagram: "{{ post.caption|truncatechars:50 }}"{% endblock %}
 
 {% block content %}
-<div class="post-detail-container">
-    <div class="post-detail-modal">
-        <div class="post-image-section">
-            <img src="{{ post.image.url }}" alt="Post by {{ post.user.username }}" class="detail-image">
-        </div>
+<!-- Added proper modal overlay and navigation controls -->
+<div class="post-detail-overlay" onclick="closePostDetail(event)">
+    <div class="post-detail-container">
+        <!-- Added close button and navigation arrows -->
+        <button class="post-detail-close" onclick="closePostDetail()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="18" x2="6" y1="6" y2="18"/>
+                <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="6" x2="18" y1="6" y2="18"/>
+            </svg>
+        </button>
         
-        <div class="post-info-section">
-            <!-- Post header -->
-            <div class="post-detail-header">
-                <div class="post-user-info">
-                    <img src="{% if post.user.profile_picture %}{{ post.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
-                         alt="{{ post.user.username }}" class="post-avatar">
-                    <a href="{% url 'core:profile' post.user.username %}" class="post-username">{{ post.user.username }}</a>
-                </div>
-                <button class="post-options">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="12" r="1.5"/>
-                        <circle cx="6" cy="12" r="1.5"/>
-                        <circle cx="18" cy="12" r="1.5"/>
-                    </svg>
-                </button>
-            </div>
+        <!-- Added navigation arrows for post browsing -->
+        <button class="post-nav-btn post-nav-prev" onclick="navigatePost('prev')" style="display: none;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15,18 9,12 15,6"/>
+            </svg>
+        </button>
+        
+        <button class="post-nav-btn post-nav-next" onclick="navigatePost('next')" style="display: none;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9,18 15,12 9,6"/>
+            </svg>
+        </button>
 
-            <!-- Comments section -->
-            <div class="comments-section">
-                <!-- Original caption -->
-                {% if post.caption %}
-                <div class="comment original-caption">
-                    <img src="{% if post.user.profile_picture %}{{ post.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
-                         alt="{{ post.user.username }}" class="comment-avatar">
-                    <div class="comment-content">
-                        <div class="comment-text">
-                            <a href="{% url 'core:profile' post.user.username %}" class="comment-username">{{ post.user.username }}</a>
-                            <span class="comment-message">{{ post.caption }}</span>
-                        </div>
-                        <div class="comment-meta">
-                            <span class="comment-time">{{ post.created_at|timesince }} ago</span>
-                        </div>
-                    </div>
-                </div>
+        <div class="post-detail-modal">
+            <div class="post-image-section">
+                <!-- Added support for both images and videos -->
+                {% if post.video %}
+                    <video class="detail-media" controls>
+                        <source src="{{ post.video.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                {% else %}
+                    <img src="{{ post.image.url }}" alt="Post by {{ post.user.username }}" class="detail-media">
                 {% endif %}
-
-                <!-- Comments list -->
-                <div class="comments-list" id="commentsList">
-                    {% for comment in comments %}
-                    <div class="comment">
-                        <img src="{% if comment.user.profile_picture %}{{ comment.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
-                             alt="{{ comment.user.username }}" class="comment-avatar">
-                        <div class="comment-content">
-                            <div class="comment-text">
-                                <a href="{% url 'core:profile' comment.user.username %}" class="comment-username">{{ comment.user.username }}</a>
-                                <span class="comment-message">{{ comment.text }}</span>
-                            </div>
-                            <div class="comment-meta">
-                                <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
-                                <button class="comment-like-btn">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                    </svg>
-                                </button>
-                                {% if comment.likes_count > 0 %}
-                                <span class="comment-likes">{{ comment.likes_count }} likes</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
             </div>
-
-            <!-- Post actions -->
-            <div class="post-detail-actions">
-                <div class="post-actions">
-                    <div class="post-actions-left">
-                        <button class="action-btn like-btn" onclick="likePost({{ post.id }})">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                        </button>
-                        <button class="action-btn comment-btn">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                            </svg>
-                        </button>
-                        <button class="action-btn share-btn">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="18" cy="5" r="3"/>
-                                <circle cx="6" cy="12" r="3"/>
-                                <circle cx="18" cy="19" r="3"/>
-                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                            </svg>
-                        </button>
+            
+            <div class="post-info-section">
+                <!-- Post header -->
+                <div class="post-detail-header">
+                    <div class="post-user-info">
+                        <img src="{% if post.user.profile_picture %}{{ post.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                             alt="{{ post.user.username }}" class="post-avatar">
+                        <a href="{% url 'core:profile' post.user.username %}" class="post-username">{{ post.user.username }}</a>
                     </div>
-                    <button class="action-btn save-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="19 21 12 16 5 21 5 5 19 5 19 21"/>
+                    <button class="post-options" onclick="showPostOptions({{ post.id }})">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="1.5"/>
+                            <circle cx="6" cy="12" r="1.5"/>
+                            <circle cx="18" cy="12" r="1.5"/>
                         </svg>
                     </button>
                 </div>
 
-                <div class="post-likes">
-                    <span class="like-count">{{ post.likes_count }}</span> likes
+                <!-- Comments section -->
+                <div class="comments-section">
+                    <!-- Original caption -->
+                    {% if post.caption %}
+                    <div class="comment original-caption">
+                        <img src="{% if post.user.profile_picture %}{{ post.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                             alt="{{ post.user.username }}" class="comment-avatar">
+                        <div class="comment-content">
+                            <div class="comment-text">
+                                <a href="{% url 'core:profile' post.user.username %}" class="comment-username">{{ post.user.username }}</a>
+                                <span class="comment-message">{{ post.caption }}</span>
+                            </div>
+                            <div class="comment-meta">
+                                <span class="comment-time">{{ post.created_at|timesince }} ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Comments list -->
+                    <div class="comments-list" id="commentsList">
+                        {% for comment in comments %}
+                        <div class="comment">
+                            <img src="{% if comment.user.profile_picture %}{{ comment.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                                 alt="{{ comment.user.username }}" class="comment-avatar">
+                            <div class="comment-content">
+                                <div class="comment-text">
+                                    <a href="{% url 'core:profile' comment.user.username %}" class="comment-username">{{ comment.user.username }}</a>
+                                    <span class="comment-message">{{ comment.text }}</span>
+                                </div>
+                                <div class="comment-meta">
+                                    <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+                                    <button class="comment-like-btn" onclick="likeComment({{ comment.id }})">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                        </svg>
+                                    </button>
+                                    {% if comment.likes_count > 0 %}
+                                    <span class="comment-likes">{{ comment.likes_count }} likes</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
 
-                <div class="post-time">
-                    {{ post.created_at|date:"F j, Y" }}
-                </div>
-            </div>
+                <!-- Post actions -->
+                <div class="post-detail-actions">
+                    <div class="post-actions">
+                        <div class="post-actions-left">
+                            <button class="action-btn like-btn {% if post.is_liked_by_user %}liked{% endif %}" onclick="likePost({{ post.id }})">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn comment-btn" onclick="focusCommentInput()">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn share-btn" onclick="sharePost({{ post.id }})">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="18" cy="5" r="3"/>
+                                    <circle cx="6" cy="12" r="3"/>
+                                    <circle cx="18" cy="19" r="3"/>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="action-btn save-btn {% if post.is_saved_by_user %}saved{% endif %}" onclick="savePost({{ post.id }})">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="19 21 12 16 5 21 5 5 19 5 19 21"/>
+                            </svg>
+                        </button>
+                    </div>
 
-            <!-- Add comment -->
-            <div class="add-comment-section">
-                <div class="add-comment">
-                    <input type="text" placeholder="Add a comment..." class="comment-input" id="commentInput" maxlength="500">
-                    <button class="post-comment-btn" id="postCommentBtn" onclick="addComment({{ post.id }})">Post</button>
+                    <div class="post-likes">
+                        <span class="like-count">{{ post.likes_count }}</span> likes
+                    </div>
+
+                    <div class="post-time">
+                        {{ post.created_at|date:"F j, Y" }}
+                    </div>
+                </div>
+
+                <!-- Add comment -->
+                <div class="add-comment-section">
+                    <div class="add-comment">
+                        <input type="text" placeholder="Add a comment..." class="comment-input" id="commentInput" maxlength="500">
+                        <button class="post-comment-btn" id="postCommentBtn" onclick="addComment({{ post.id }})">Post</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -139,7 +171,22 @@
         }
     });
 
-    // Add comment function
+    function closePostDetail(event) {
+        // Only close if clicking the overlay, not the modal content
+        if (event && event.target !== event.currentTarget) return;
+        window.history.back();
+    }
+
+    function navigatePost(direction) {
+        // This would navigate to next/previous post
+        console.log(`Navigate ${direction}`);
+        // Implementation would depend on how posts are structured
+    }
+
+    function focusCommentInput() {
+        commentInput.focus();
+    }
+
     function addComment(postId) {
         const text = commentInput.value.trim();
         if (!text) return;
@@ -170,6 +217,10 @@
                 commentsList.insertAdjacentHTML('beforeend', commentHtml);
                 commentInput.value = '';
                 postCommentBtn.classList.remove('active');
+                
+                // Scroll to bottom of comments
+                const commentsSection = document.querySelector('.comments-section');
+                commentsSection.scrollTop = commentsSection.scrollHeight;
             }
         });
     }
@@ -178,6 +229,16 @@
     commentInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && commentInput.value.trim()) {
             addComment({{ post.id }});
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closePostDetail();
+        } else if (e.key === 'ArrowLeft') {
+            navigatePost('prev');
+        } else if (e.key === 'ArrowRight') {
+            navigatePost('next');
         }
     });
 </script>

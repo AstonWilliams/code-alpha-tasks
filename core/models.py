@@ -12,24 +12,7 @@ class User(AbstractUser):
     following_count = models.PositiveIntegerField(default=0)
     posts_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    # Override the groups and user_permissions fields to avoid conflicts
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='custom_user_groups',  # Unique related name
-        blank=True,
-        help_text='The groups this user belongs to.',
-        verbose_name='groups'
-    )
-
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='custom_user_permissions',  # Unique related name
-        blank=True,
-        help_text='Specific permissions for this user.',
-        verbose_name='user permissions'
-    )
-
+    
     def __str__(self):
         return self.username
 
@@ -46,8 +29,12 @@ class Follow(models.Model):
 
 class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
-    image = models.ImageField(upload_to='posts/')
+    image = models.ImageField(upload_to='posts/', blank=True, null=True)
+    video = models.FileField(upload_to='videos/', blank=True, null=True)
     caption = models.TextField(blank=True)
+    alt_text = models.TextField(blank=True)
+    hide_counts = models.BooleanField(default=False)
+    disable_comments = models.BooleanField(default=False)
     likes_count = models.PositiveIntegerField(default=0)
     comments_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -92,7 +79,8 @@ class CommentLike(models.Model):
 
 class Story(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories')
-    image = models.ImageField(upload_to='stories/')
+    image = models.ImageField(upload_to='stories/', blank=True, null=True)
+    video = models.FileField(upload_to='story_videos/', blank=True, null=True)
     text = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
@@ -151,3 +139,24 @@ class Notification(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+class SavedPost(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_posts')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='saved_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'post')
+    
+    def __str__(self):
+        return f"{self.user.username} saved {self.post.id}"
+
+class Share(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='shares')
+    shared_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_shares', null=True, blank=True)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.user.username} shared {self.post.id}"

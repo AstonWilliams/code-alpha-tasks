@@ -202,6 +202,7 @@
 
 <!-- New Message Modal -->
 <div class="new-message-modal" id="newMessageModal" style="display: none;">
+    <div class="modal-overlay" onclick="closeNewMessageModal()"></div>
     <div class="modal-content">
         <div class="modal-header">
             <h2>New Message</h2>
@@ -214,17 +215,19 @@
         </div>
         
         <div class="modal-body">
-            <div class="recipient-search">
-                <label>To:</label>
-                <input type="text" placeholder="Search..." class="recipient-input" id="recipientInput">
+            <div class="recipient-search-container">
+                <label class="search-label">To:</label>
+                <div class="recipient-input-wrapper">
+                    <div class="selected-recipients-inline" id="selectedRecipientsInline"></div>
+                    <input type="text" placeholder="Search..." class="recipient-input" id="recipientInput" oninput="searchUsers(this.value)">
+                </div>
             </div>
             
-            <div class="suggested-users" id="suggestedUsers">
-                <!-- Suggested users will be populated here -->
-            </div>
-            
-            <div class="selected-recipients" id="selectedRecipients">
-                <!-- Selected recipients will appear here -->
+            <div class="suggested-section">
+                <h3>Suggested</h3>
+                <div class="suggested-users" id="suggestedUsers">
+                    <!-- Suggested users will be populated here -->
+                </div>
             </div>
         </div>
         
@@ -246,46 +249,64 @@
     }
 
     function selectConversation(conversationId) {
-        // Update active conversation
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.classList.remove('active');
         });
-        document.querySelector(`[data-conversation-id="${conversationId}"]`).classList.add('active');
+        
+        const selectedItem = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('active');
+        }
         
         currentConversationId = conversationId;
         loadMessages(conversationId);
+        
+        // Update chat header
+        updateChatHeader(conversationId);
+    }
+
+    function updateChatHeader(conversationId) {
+        // This would update the chat header with the selected conversation details
+        // Implementation depends on how conversation data is structured
     }
 
     function loadMessages(conversationId) {
-        fetch(`/messages/${conversationId}/`)
-            .then(response => response.text())
-            .then(html => {
-                // Extract messages from the response
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
+        fetch(`/ajax/get-messages/${conversationId}/`)
+            .then(response => response.json())
+            .then(data => {
                 const messagesArea = document.getElementById('messagesArea');
-                
-                // This would typically load messages via AJAX
-                // For now, we'll simulate with placeholder messages
-                messagesArea.innerHTML = `
-                    <div class="messages-list">
-                        <div class="message received">
-                            <div class="message-content">Hey! How are you?</div>
-                            <div class="message-time">2:30 PM</div>
+                if (data.success) {
+                    messagesArea.innerHTML = `
+                        <div class="messages-list">
+                            ${data.messages.map(message => `
+                                <div class="message ${message.sender_id === {{ user.id }} ? 'sent' : 'received'}">
+                                    <div class="message-content">${message.text}</div>
+                                    <div class="message-time">${message.time}</div>
+                                </div>
+                            `).join('')}
                         </div>
-                        <div class="message sent">
-                            <div class="message-content">I'm good! Just working on some projects. How about you?</div>
-                            <div class="message-time">2:32 PM</div>
+                    `;
+                } else {
+                    // Show placeholder messages for demo
+                    messagesArea.innerHTML = `
+                        <div class="messages-list">
+                            <div class="message received">
+                                <div class="message-content">Hey! How are you?</div>
+                                <div class="message-time">2:30 PM</div>
+                            </div>
+                            <div class="message sent">
+                                <div class="message-content">I'm good! Just working on some projects. How about you?</div>
+                                <div class="message-time">2:32 PM</div>
+                            </div>
                         </div>
-                        <div class="message received">
-                            <div class="message-content">Same here! Want to grab coffee later?</div>
-                            <div class="message-time">2:35 PM</div>
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
                 
                 // Scroll to bottom
                 messagesArea.scrollTop = messagesArea.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error loading messages:', error);
             });
     }
 
@@ -295,7 +316,7 @@
         
         if (!text || !currentConversationId) return;
         
-        // Add message to UI immediately
+        // Add message to UI immediately (optimistic update)
         const messagesArea = document.getElementById('messagesArea');
         const messagesList = messagesArea.querySelector('.messages-list');
         
@@ -316,10 +337,26 @@
             text: text
         }, function(response) {
             if (response.success) {
-                // Message sent successfully
-                console.log('Message sent');
+                console.log('Message sent successfully');
+                // Update conversation preview in sidebar
+                updateConversationPreview(currentConversationId, text);
+            } else {
+                // Handle error - maybe remove the optimistic message
+                console.error('Failed to send message');
             }
         });
+    }
+
+    function updateConversationPreview(conversationId, lastMessage) {
+        const conversationItem = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+        if (conversationItem) {
+            const preview = conversationItem.querySelector('.message-text');
+            const sender = conversationItem.querySelector('.message-sender');
+            if (preview && sender) {
+                sender.textContent = 'You:';
+                preview.textContent = lastMessage.length > 30 ? lastMessage.substring(0, 30) + '...' : lastMessage;
+            }
+        }
     }
 
     // Message input handlers
@@ -330,8 +367,10 @@
         messageInput.addEventListener('input', () => {
             if (messageInput.value.trim()) {
                 sendBtn.classList.add('active');
+                sendBtn.textContent = 'Send';
             } else {
                 sendBtn.classList.remove('active');
+                sendBtn.textContent = 'Send';
             }
         });
 
@@ -342,44 +381,89 @@
         });
     }
 
-    // New message modal functions
     function openNewMessageModal() {
         document.getElementById('newMessageModal').style.display = 'flex';
+        selectedRecipients = [];
+        updateSelectedRecipients();
         loadSuggestedUsers();
+        document.getElementById('recipientInput').focus();
     }
 
     function closeNewMessageModal() {
         document.getElementById('newMessageModal').style.display = 'none';
         selectedRecipients = [];
         updateSelectedRecipients();
+        document.getElementById('recipientInput').value = '';
+    }
+
+    function searchUsers(query) {
+        if (query.length < 2) {
+            loadSuggestedUsers();
+            return;
+        }
+        
+        // Search users via AJAX
+        makeAjaxRequest('/ajax/search-users/', { query: query }, function(response) {
+            if (response.success) {
+                displayUsers(response.users);
+            }
+        });
     }
 
     function loadSuggestedUsers() {
-        // This would typically load from server
-        const suggestedUsers = document.getElementById('suggestedUsers');
-        suggestedUsers.innerHTML = `
-            <div class="suggested-user" onclick="selectRecipient('john_doe', 'John Doe')">
-                <img src="/static/images/default-avatar.jpg" alt="John Doe">
-                <div class="user-info">
-                    <div class="username">john_doe</div>
-                    <div class="fullname">John Doe</div>
-                </div>
-            </div>
-            <div class="suggested-user" onclick="selectRecipient('jane_smith', 'Jane Smith')">
-                <img src="/static/images/default-avatar.jpg" alt="Jane Smith">
-                <div class="user-info">
-                    <div class="username">jane_smith</div>
-                    <div class="fullname">Jane Smith</div>
-                </div>
-            </div>
-        `;
+        // Load suggested users
+        makeAjaxRequest('/ajax/suggested-users/', {}, function(response) {
+            if (response.success) {
+                displayUsers(response.users);
+            } else {
+                // Fallback to demo users
+                displayUsers([
+                    { username: 'john_doe', full_name: 'John Doe', profile_picture: '/static/images/default-avatar.jpg' },
+                    { username: 'jane_smith', full_name: 'Jane Smith', profile_picture: '/static/images/default-avatar.jpg' }
+                ]);
+            }
+        });
     }
 
-    function selectRecipient(username, fullname) {
-        if (!selectedRecipients.find(r => r.username === username)) {
-            selectedRecipients.push({ username, fullname });
-            updateSelectedRecipients();
-            updateChatButton();
+    function displayUsers(users) {
+        const suggestedUsers = document.getElementById('suggestedUsers');
+        suggestedUsers.innerHTML = users.map(user => `
+            <div class="suggested-user" onclick="selectRecipient('${user.username}', '${user.full_name}', '${user.profile_picture}')">
+                <img src="${user.profile_picture}" alt="${user.full_name}" class="user-avatar">
+                <div class="user-info">
+                    <div class="username">${user.username}</div>
+                    <div class="fullname">${user.full_name}</div>
+                </div>
+                <div class="select-indicator" style="display: ${selectedRecipients.find(r => r.username === user.username) ? 'block' : 'none'}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function selectRecipient(username, fullname, profilePicture) {
+        const existingIndex = selectedRecipients.findIndex(r => r.username === username);
+        
+        if (existingIndex > -1) {
+            // Remove if already selected
+            selectedRecipients.splice(existingIndex, 1);
+        } else {
+            // Add if not selected
+            selectedRecipients.push({ username, fullname, profilePicture });
+        }
+        
+        updateSelectedRecipients();
+        updateChatButton();
+        
+        // Refresh the user list to update selection indicators
+        const currentQuery = document.getElementById('recipientInput').value;
+        if (currentQuery.length >= 2) {
+            searchUsers(currentQuery);
+        } else {
+            loadSuggestedUsers();
         }
     }
 
@@ -390,11 +474,12 @@
     }
 
     function updateSelectedRecipients() {
-        const container = document.getElementById('selectedRecipients');
+        const container = document.getElementById('selectedRecipientsInline');
         container.innerHTML = selectedRecipients.map(recipient => `
-            <div class="selected-recipient">
+            <div class="selected-recipient-tag">
+                <img src="${recipient.profilePicture}" alt="${recipient.username}" class="recipient-avatar">
                 <span>${recipient.username}</span>
-                <button onclick="removeRecipient('${recipient.username}')">×</button>
+                <button onclick="removeRecipient('${recipient.username}')" class="remove-recipient">×</button>
             </div>
         `).join('');
     }
@@ -402,19 +487,23 @@
     function updateChatButton() {
         const chatBtn = document.getElementById('chatBtn');
         chatBtn.disabled = selectedRecipients.length === 0;
+        chatBtn.textContent = selectedRecipients.length === 1 ? 'Chat' : `Chat (${selectedRecipients.length})`;
     }
 
     function startConversation() {
         if (selectedRecipients.length === 0) return;
         
-        // Create new conversation
         const usernames = selectedRecipients.map(r => r.username);
         
         makeAjaxRequest('/ajax/create-conversation/', {
             participants: usernames
         }, function(response) {
             if (response.success) {
+                closeNewMessageModal();
+                // Redirect to the new conversation or update the current view
                 window.location.href = `/messages/${response.conversation_id}/`;
+            } else {
+                alert('Failed to create conversation. Please try again.');
             }
         });
     }

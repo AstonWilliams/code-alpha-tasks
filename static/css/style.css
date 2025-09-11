@@ -848,6 +848,9 @@ body {
   position: relative;
   user-select: none;
   cursor: pointer;
+  /* Adding max-height to prevent oversized images */
+  max-height: 600px;
+  object-fit: contain;
 }
 
 .post-actions {
@@ -1398,11 +1401,17 @@ body {
 
 .upload-area {
   text-align: center;
-  padding: 60px;
+  padding: 60px 20px;
   border: 2px dashed #262626;
   border-radius: 8px;
-  margin: 40px;
+  margin: 20px;
   transition: border-color 0.2s ease;
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .upload-area.drag-over {
@@ -1437,6 +1446,13 @@ body {
   background-color: #1877f2;
 }
 
+.image-preview {
+  max-width: 100%;
+  /* Adding max-height constraint for image previews */
+  max-height: 400px;
+  object-fit: contain;
+}
+
 .preview-section {
   flex: 1;
   display: flex;
@@ -1466,7 +1482,8 @@ body {
 
 .final-preview {
   max-width: 100%;
-  max-height: 100%;
+  /* Adding max-height constraint for final preview */
+  max-height: 500px;
   object-fit: contain;
 }
 
@@ -1695,7 +1712,8 @@ input:checked + .slider:before {
 
 .detail-image {
   max-width: 100%;
-  max-height: 100%;
+  /* Adding max-height constraint for detail images */
+  max-height: 600px;
   object-fit: contain;
 }
 
@@ -2528,16 +2546,31 @@ input:checked + .slider:before {
 
 .message-content {
   background-color: #262626;
-  color: #ffffff;
-  padding: 8px 12px;
   border-radius: 18px;
-  font-size: 14px;
+  padding: 8px 12px;
+  max-width: 70%;
+  /* Enhanced text wrapping for long messages */
   word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .message.sent .message-content {
   background-color: #0095f6;
+  margin-left: auto;
+}
+
+.message-text {
   color: #ffffff;
+  font-size: 14px;
+  /* Improved text wrapping and line height */
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  white-space: pre-wrap;
 }
 
 .message-time {
@@ -3008,15 +3041,13 @@ input:checked + .slider:before {
   }
 
   .conversation-detail-container {
-    height: calc(100vh - 54px);
-  }
-
-  .conversation-header {
-    padding: 8px 16px;
-  }
-
-  .messages-container {
-    padding: 16px;
+    position: fixed;
+    top: 54px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000;
+    z-index: 1001;
   }
 
   .message-input-section {
@@ -3487,4 +3518,755 @@ input:checked + .slider:before {
   .group-info-sidebar.active {
     right: 0;
   }
+}
+
+/* Added comprehensive responsive design improvements */
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+  /* Navigation improvements */
+  .nav-container {
+    padding: 8px 16px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: #000;
+    border-bottom: 1px solid #262626;
+  }
+
+  .main-content {
+    margin-top: 54px;
+    padding-bottom: 60px;
+  }
+
+  /* Bottom navigation for mobile */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #000;
+    border-top: 1px solid #262626;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    z-index: 1000;
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    color: #8e8e8e;
+    text-decoration: none;
+    font-size: 10px;
+  }
+
+  .mobile-nav-item.active {
+    color: #fff;
+  }
+
+  .mobile-nav-item svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 2px;
+  }
+
+  /* Post improvements */
+  .post {
+    margin-bottom: 0;
+    border-bottom: 1px solid #262626;
+  }
+
+  .post-image {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+  }
+
+  .post-image img,
+  .post-image video {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+  }
+
+  /* Create post modal improvements */
+  .create-post-modal {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    max-width: none;
+    max-height: none;
+  }
+
+  .create-post-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #262626;
+  }
+
+  .upload-area {
+    min-height: 50vh;
+    margin: 16px;
+  }
+
+  /* Messages improvements */
+  .messages-container {
+    height: calc(100vh - 54px);
+  }
+
+  .messages-sidebar {
+    width: 100%;
+    border-right: none;
+  }
+
+  .messages-main {
+    display: none;
+  }
+
+  .conversation-detail-container {
+    position: fixed;
+    top: 54px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000;
+    z-index: 1001;
+  }
+
+  .message-input-container {
+    padding: 12px 16px;
+    background-color: #000;
+    border-top: 1px solid #262626;
+  }
+
+  /* Profile improvements */
+  .profile-header {
+    padding: 16px;
+  }
+
+  .profile-info {
+    margin-left: 16px;
+  }
+
+  .profile-stats {
+    justify-content: space-around;
+    margin: 16px 0;
+  }
+
+  .profile-posts {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  /* Settings page */
+  .settings-container {
+    flex-direction: column;
+    height: calc(100vh - 54px);
+  }
+
+  .settings-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #262626;
+  }
+
+  .settings-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .settings-nav-item {
+    white-space: nowrap;
+    padding: 12px 16px;
+  }
+
+  .settings-content {
+    flex: 1;
+    padding: 16px;
+  }
+}
+
+/* Added video player styles */
+.video-player {
+  position: relative;
+  width: 100%;
+  background-color: #000;
+}
+
+.video-player video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 20px 16px 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.video-player:hover .video-controls,
+.video-controls.show {
+  opacity: 1;
+}
+
+.video-progress-container {
+  margin-bottom: 12px;
+}
+
+.video-progress {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.video-progress-filled {
+  height: 100%;
+  background-color: #fff;
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+
+.video-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.video-controls-left,
+.video-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.video-control-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.video-control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.video-time {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Added upload progress styles */
+.upload-progress {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  background-color: #1a1a1a;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 300px;
+  z-index: 10000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.upload-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.upload-progress-title {
+  font-weight: 600;
+  color: #fff;
+}
+
+.upload-progress-close {
+  background: none;
+  border: none;
+  color: #8e8e8e;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.upload-progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #262626;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background-color: #0095f6;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.upload-progress-text {
+  font-size: 14px;
+  color: #8e8e8e;
+  text-align: center;
+}
+
+/* Added settings page styles */
+.settings-container {
+  display: flex;
+  max-width: 935px;
+  margin: 0 auto;
+  min-height: calc(100vh - 54px);
+  background-color: #000;
+}
+
+.settings-sidebar {
+  width: 236px;
+  border-right: 1px solid #262626;
+  background-color: #000;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  color: #8e8e8e;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.settings-nav-item:hover,
+.settings-nav-item.active {
+  color: #fff;
+  background-color: #1a1a1a;
+  border-left-color: #fff;
+}
+
+.settings-content {
+  flex: 1;
+  padding: 32px;
+}
+
+.settings-tab {
+  display: none;
+}
+
+.settings-tab.active {
+  display: block;
+}
+
+.settings-header {
+  margin-bottom: 32px;
+}
+
+.settings-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.settings-form {
+  max-width: 400px;
+}
+
+.profile-picture-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #262626;
+}
+
+.settings-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-controls h3 {
+  font-size: 20px;
+  font-weight: 400;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #1a1a1a;
+  border: 1px solid #262626;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #0095f6;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-help {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #8e8e8e;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #262626;
+  border-radius: 3px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+  background-color: #0095f6;
+  border-color: #0095f6;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+  content: "✓";
+  position: absolute;
+  top: -2px;
+  left: 2px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.privacy-options {
+  max-width: 600px;
+}
+
+.privacy-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid #262626;
+}
+
+.privacy-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.privacy-info p {
+  font-size: 14px;
+  color: #8e8e8e;
+  line-height: 1.4;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #262626;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #0095f6;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* Added share modal styles */
+.share-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.share-modal-content {
+  background-color: #262626;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.share-modal-header {
+  padding: 16px;
+  border-bottom: 1px solid #363636;
+  text-align: center;
+}
+
+.share-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.share-options {
+  padding: 8px 0;
+}
+
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.share-option:hover {
+  background-color: #1a1a1a;
+}
+
+.share-option-icon {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+}
+
+.share-option-text {
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Adding specific styles for create post image preview */
+.create-post-modal .image-preview,
+.create-post-modal .final-preview {
+  max-width: 100%;
+  max-height: 400px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Ensuring post images in feed don't exceed reasonable dimensions */
+.post-content .post-image img,
+.post-content .post-image video {
+  max-height: 600px;
+  width: 100%;
+  object-fit: contain;
+  background-color: #000;
+}
+
+/* Fixing image preview sizing issues in create post modal */
+.media-preview-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.media-preview {
+  max-width: 100%;
+  max-height: 350px !important;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.final-preview-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  background-color: #000;
+}
+
+.final-preview {
+  max-width: 100%;
+  max-height: 350px !important;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.alt-preview-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  border-radius: 4px;
+  background-color: #000;
+}
+
+.alt-preview {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Ensuring modal footer is always visible and properly positioned */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid #262626;
+  background-color: #1a1a1a;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.footer-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.back-btn,
+.next-btn,
+.share-btn {
+  background: none;
+  border: none;
+  color: #0095f6;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover,
+.next-btn:hover,
+.share-btn:hover {
+  background-color: rgba(0, 149, 246, 0.1);
+  color: #ffffff;
+}
+
+.share-btn:disabled {
+  color: #8e8e8e;
+  cursor: not-allowed;
+  background-color: transparent;
+}
+
+/* Fixing post details layout to prevent overflow */
+.post-details {
+  flex: 1;
+  display: flex;
+  max-height: calc(100% - 120px); /* Account for header and footer */
+  overflow: hidden;
+}
+
+.post-preview-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000000;
+  min-height: 0; /* Allow flex shrinking */
+}
+
+.post-form-container {
+  flex: 0 0 340px;
+  border-left: 1px solid #262626;
+  padding: 16px;
+  overflow-y: auto;
+  max-height: 100%;
 }

@@ -1,0 +1,43 @@
+{% extends 'core/base_main.html' %}
+
+{% block title %}{{ profile_user.username }} • Followers{% endblock %}
+
+{% block content %}
+<div class="followers-container">
+    <div class="followers-modal">
+        <div class="modal-header">
+            <h2>Followers</h2>
+            <button class="close-btn" onclick="window.history.back()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="18" x2="6" y1="6" y2="18"/>
+                    <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="6" x2="18" y1="6" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="followers-list">
+            {% for follow in followers %}
+            <div class="follower-item">
+                <div class="follower-info">
+                    <img src="{% if follow.follower.profile_picture %}{{ follow.follower.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                         alt="{{ follow.follower.username }}" class="follower-avatar">
+                    <div class="follower-details">
+                        <a href="{% url 'core:profile' follow.follower.username %}" class="follower-username">{{ follow.follower.username }}</a>
+                        <span class="follower-name">{{ follow.follower.get_full_name }}</span>
+                    </div>
+                </div>
+                {% if follow.follower != user %}
+                <button class="follow-btn" data-username="{{ follow.follower.username }}">
+                    {% if follow.follower in user.following.all %}Unfollow{% else %}Follow{% endif %}
+                </button>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>No followers yet</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -15,35 +15,65 @@
             </button>
         </div>
 
-        <form method="post" enctype="multipart/form-data" class="create-post-form" id="createPostForm">
+        <form method="post" enctype="multipart/form-data" class="create-post-form" id="createPostForm" action="{% url 'core:create_post' %}">
             {% csrf_token %}
             
+            <!-- Improved upload section with better responsive design and clearer workflow -->
             <div class="upload-section" id="uploadSection">
                 <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">
-                        <svg width="96" height="77" viewBox="0 0 96 77" fill="currentColor">
-                            <path d="M43.5 0h9v77h-9V0z"/>
-                            <path d="M0 33.5h96v9H0v-9z"/>
-                        </svg>
+                    <div class="upload-content">
+                        <div class="upload-icon">
+                            <svg width="96" height="77" viewBox="0 0 96 77" fill="currentColor">
+                                <path d="M43.5 0h9v77h-9V0z"/>
+                                <path d="M0 33.5h96v9H0v-9z"/>
+                            </svg>
+                        </div>
+                        <h3>Drag photos and videos here</h3>
+                        <div class="upload-buttons">
+                            <button type="button" class="select-btn" onclick="document.getElementById('mediaInput').click()">
+                                Select from computer
+                            </button>
+                        </div>
                     </div>
-                    <h3>Drag photos and videos here</h3>
-                    <button type="button" class="select-btn" onclick="document.getElementById('imageInput').click()">
-                        Select from computer
-                    </button>
-                    <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;" required>
+                    <input type="file" id="mediaInput" name="media" accept="image/*,video/*" style="display: none;">
+                    
+                    <!-- Added better upload progress with clearer visual feedback -->
+                    <div class="upload-progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span id="progressPercent">0%</span>
+                                <span id="progressStatus">Uploading...</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
+                <!-- Improved preview section with better sizing -->
                 <div class="preview-section" id="previewSection" style="display: none;">
-                    <img id="imagePreview" src="/placeholder.svg" alt="Preview" class="image-preview">
+                    <div class="media-preview-container">
+                        <img id="imagePreview" src="/placeholder.svg" alt="Preview" class="media-preview" style="display: none;">
+                        <video id="videoPreview" class="media-preview" style="display: none;" controls>
+                            <source src="/placeholder.svg" type="video/mp4">
+                        </video>
+                    </div>
                 </div>
             </div>
 
+            <!-- Redesigned post details section with better layout -->
             <div class="post-details" id="postDetails" style="display: none;">
-                <div class="post-preview">
-                    <img id="finalPreview" src="/placeholder.svg" alt="Post preview" class="final-preview">
+                <div class="post-preview-container">
+                    <div class="final-preview-wrapper">
+                        <img id="finalImagePreview" src="/placeholder.svg" alt="Post preview" class="final-preview" style="display: none;">
+                        <video id="finalVideoPreview" class="final-preview" style="display: none;" controls>
+                            <source src="/placeholder.svg" type="video/mp4">
+                        </video>
+                    </div>
                 </div>
                 
-                <div class="post-form">
+                <div class="post-form-container">
                     <div class="user-info">
                         <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
                              alt="{{ user.username }}" class="user-avatar">
@@ -51,7 +81,7 @@
                     </div>
                     
                     <div class="caption-section">
-                        <textarea name="caption" placeholder="Write a caption..." class="caption-input" maxlength="2200"></textarea>
+                        <textarea name="caption" placeholder="Write a caption..." class="caption-input" maxlength="2200" id="captionTextarea"></textarea>
                         <div class="caption-counter">
                             <span id="captionCount">0</span>/2,200
                         </div>
@@ -62,11 +92,16 @@
                             <span>Accessibility</span>
                         </div>
                         <p class="section-description">
-                            Alt text describes your photos for people with visual impairments. Alt text will be automatically created for your photos or you can choose to write your own.
+                            Alt text describes your photos for people with visual impairments.
                         </p>
-                        <div class="alt-text-input">
-                            <img id="altTextPreview" src="/placeholder.svg" alt="Alt text preview" class="alt-preview">
-                            <input type="text" placeholder="Write alt text..." class="alt-input">
+                        <div class="alt-text-container">
+                            <div class="alt-preview-wrapper">
+                                <img id="altImagePreview" src="/placeholder.svg" alt="Alt text preview" class="alt-preview" style="display: none;">
+                                <video id="altVideoPreview" class="alt-preview" style="display: none;">
+                                    <source src="/placeholder.svg" type="video/mp4">
+                                </video>
+                            </div>
+                            <input type="text" name="alt_text" placeholder="Write alt text..." class="alt-input">
                         </div>
                     </div>
                     
@@ -90,10 +125,13 @@
                 </div>
             </div>
 
+            <!-- Fixed modal footer with proper button positioning and visibility -->
             <div class="modal-footer" id="modalFooter">
-                <button type="button" class="back-btn" id="backBtn" style="display: none;" onclick="goBack()">Back</button>
-                <button type="button" class="next-btn" id="nextBtn" style="display: none;" onclick="showDetails()">Next</button>
-                <button type="submit" class="share-btn" id="shareBtn" style="display: none;">Share</button>
+                <div class="footer-buttons">
+                    <button type="button" class="back-btn" id="backBtn" style="display: none;" onclick="goBack()">Back</button>
+                    <button type="button" class="next-btn" id="nextBtn" style="display: none;" onclick="showDetails()">Next</button>
+                    <button type="submit" class="share-btn" id="shareBtn" style="display: none;">Share</button>
+                </div>
             </div>
         </form>
     </div>
@@ -102,27 +140,36 @@
 
 {% block extra_js %}
 <script>
-    const imageInput = document.getElementById('imageInput');
+    const mediaInput = document.getElementById('mediaInput');
     const uploadArea = document.getElementById('uploadArea');
     const uploadSection = document.getElementById('uploadSection');
     const previewSection = document.getElementById('previewSection');
     const postDetails = document.getElementById('postDetails');
     const imagePreview = document.getElementById('imagePreview');
-    const finalPreview = document.getElementById('finalPreview');
-    const altTextPreview = document.getElementById('altTextPreview');
+    const videoPreview = document.getElementById('videoPreview');
+    const finalImagePreview = document.getElementById('finalImagePreview');
+    const finalVideoPreview = document.getElementById('finalVideoPreview');
+    const altImagePreview = document.getElementById('altImagePreview');
+    const altVideoPreview = document.getElementById('altVideoPreview');
     const nextBtn = document.getElementById('nextBtn');
     const backBtn = document.getElementById('backBtn');
     const shareBtn = document.getElementById('shareBtn');
-    const captionInput = document.querySelector('.caption-input');
+    const captionTextarea = document.getElementById('captionTextarea');
     const captionCount = document.getElementById('captionCount');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const progressPercent = document.getElementById('progressPercent');
 
-    // Drag and drop functionality
+    let selectedFile = null;
+    let isVideo = false;
+
     uploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadArea.classList.add('drag-over');
     });
 
-    uploadArea.addEventListener('dragleave', () => {
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
         uploadArea.classList.remove('drag-over');
     });
 
@@ -131,33 +178,103 @@
         uploadArea.classList.remove('drag-over');
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            handleImageSelect(files[0]);
+            handleMediaSelect(files[0]);
         }
     });
 
-    // File input change
-    imageInput.addEventListener('change', (e) => {
+    mediaInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
-            handleImageSelect(e.target.files[0]);
+            handleMediaSelect(e.target.files[0]);
         }
     });
 
-    // Handle image selection
-    function handleImageSelect(file) {
+    function handleMediaSelect(file) {
+        selectedFile = file;
+        
+        // Validate file type
+        const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/mov', 'video/avi'];
+        
+        isVideo = validVideoTypes.includes(file.type);
+        const isImage = validImageTypes.includes(file.type);
+        
+        if (!isImage && !isVideo) {
+            alert('Please select a valid image (JPG, PNG, GIF, WebP) or video (MP4, WebM, OGG, MOV, AVI) file');
+            return;
+        }
+        
+        // Validate file size
+        const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB for video, 10MB for image
+        if (file.size > maxSize) {
+            alert(`File too large. Maximum size is ${isVideo ? '100MB' : '10MB'}`);
+            return;
+        }
+        
+        // Show upload progress
+        showUploadProgress();
+        
         const reader = new FileReader();
         reader.onload = (e) => {
-            imagePreview.src = e.target.result;
-            finalPreview.src = e.target.result;
-            altTextPreview.src = e.target.result;
+            const result = e.target.result;
             
-            uploadSection.style.display = 'none';
-            previewSection.style.display = 'block';
-            nextBtn.style.display = 'block';
+            if (isVideo) {
+                // Set video sources
+                videoPreview.src = result;
+                finalVideoPreview.src = result;
+                altVideoPreview.src = result;
+                
+                // Show video elements
+                videoPreview.style.display = 'block';
+                imagePreview.style.display = 'none';
+                finalVideoPreview.style.display = 'block';
+                finalImagePreview.style.display = 'none';
+                altVideoPreview.style.display = 'block';
+                altImagePreview.style.display = 'none';
+            } else {
+                // Set image sources
+                imagePreview.src = result;
+                finalImagePreview.src = result;
+                altImagePreview.src = result;
+                
+                // Show image elements
+                imagePreview.style.display = 'block';
+                videoPreview.style.display = 'none';
+                finalImagePreview.style.display = 'block';
+                finalVideoPreview.style.display = 'none';
+                altImagePreview.style.display = 'block';
+                altVideoPreview.style.display = 'none';
+            }
+            
+            // Simulate upload progress and show preview
+            simulateUploadProgress(() => {
+                uploadSection.style.display = 'none';
+                previewSection.style.display = 'block';
+                nextBtn.style.display = 'block';
+            });
         };
         reader.readAsDataURL(file);
     }
 
-    // Show post details
+    function showUploadProgress() {
+        uploadProgress.style.display = 'block';
+        progressFill.style.width = '0%';
+        progressPercent.textContent = '0%';
+    }
+
+    function simulateUploadProgress(callback) {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                setTimeout(callback, 500);
+            }
+            progressFill.style.width = progress + '%';
+            progressPercent.textContent = Math.round(progress) + '%';
+        }, 100);
+    }
+
     function showDetails() {
         previewSection.style.display = 'none';
         postDetails.style.display = 'flex';
@@ -166,7 +283,6 @@
         shareBtn.style.display = 'block';
     }
 
-    // Go back to preview
     function goBack() {
         postDetails.style.display = 'none';
         previewSection.style.display = 'block';
@@ -175,17 +291,127 @@
         nextBtn.style.display = 'block';
     }
 
-    // Caption counter
-    captionInput.addEventListener('input', () => {
-        captionCount.textContent = captionInput.value.length;
-    });
+    if (captionTextarea) {
+        captionTextarea.addEventListener('input', () => {
+            captionCount.textContent = captionTextarea.value.length;
+        });
+    }
 
-    // Form submission
     document.getElementById('createPostForm').addEventListener('submit', (e) => {
-        if (!imageInput.files.length) {
+        console.log('[v0] Form submission started');
+        console.log('[v0] Selected file:', selectedFile);
+        console.log('[v0] Is video:', isVideo);
+        
+        if (!selectedFile) {
             e.preventDefault();
-            alert('Please select an image');
+            alert('Please select an image or video');
+            console.log('[v0] Form submission blocked - no file selected');
+            return;
         }
+        
+        e.preventDefault(); // Prevent default form submission
+        console.log('[v0] Default form submission prevented, using fetch instead');
+        
+        const formData = new FormData();
+        const form = document.getElementById('createPostForm');
+        
+        console.log('[v0] Form element found:', form);
+        console.log('[v0] Form action URL:', form.action);
+        
+        const csrfToken = form.querySelector('[name="csrfmiddlewaretoken"]').value;
+        const caption = captionTextarea.value || '';
+        const altText = form.querySelector('[name="alt_text"]').value || '';
+        const hideCounts = form.querySelector('[name="hide_counts"]').checked;
+        const disableComments = form.querySelector('[name="disable_comments"]').checked;
+        
+        console.log('[v0] Form data values:');
+        console.log('[v0] - CSRF token:', csrfToken ? 'present' : 'missing');
+        console.log('[v0] - Caption:', caption);
+        console.log('[v0] - Alt text:', altText);
+        console.log('[v0] - Hide counts:', hideCounts);
+        console.log('[v0] - Disable comments:', disableComments);
+        
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        formData.append('caption', caption);
+        formData.append('alt_text', altText);
+        formData.append('hide_counts', hideCounts);
+        formData.append('disable_comments', disableComments);
+        
+        if (isVideo) {
+            formData.append('video', selectedFile);
+            console.log('[v0] Adding video file:', selectedFile.name, 'Size:', selectedFile.size, 'Type:', selectedFile.type);
+        } else {
+            formData.append('image', selectedFile);
+            console.log('[v0] Adding image file:', selectedFile.name, 'Size:', selectedFile.size, 'Type:', selectedFile.type);
+        }
+        
+        console.log('[v0] FormData contents:');
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log('[v0] -', key + ':', value.name, '(' + value.size + ' bytes)');
+            } else {
+                console.log('[v0] -', key + ':', value);
+            }
+        }
+        
+        // Show loading state
+        shareBtn.textContent = 'Sharing...';
+        shareBtn.disabled = true;
+        console.log('[v0] Share button disabled, showing loading state');
+        
+        console.log('[v0] Starting fetch request to:', form.action);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            console.log('[v0] Response received:');
+            console.log('[v0] - Status:', response.status, response.statusText);
+            console.log('[v0] - URL:', response.url);
+            console.log('[v0] - Headers:', Object.fromEntries(response.headers.entries()));
+            
+            if (response.ok) {
+                const contentType = response.headers.get('content-type');
+                console.log('[v0] - Content-Type:', contentType);
+                
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => {
+                        console.log('[v0] JSON response data:', data);
+                        if (data.success) {
+                            console.log('[v0] Post created successfully via JSON response');
+                            const redirectUrl = data.redirect || data.redirect_url || '/';
+                            console.log('[v0] Redirecting to:', redirectUrl);
+                            window.location.href = redirectUrl;
+                        } else {
+                            throw new Error(data.error || 'Unknown error occurred');
+                        }
+                    });
+                } else {
+                    console.log('[v0] Non-JSON response, assuming success and redirecting to home');
+                    window.location.href = '/';
+                }
+            } else {
+                return response.text().then(text => {
+                    console.log('[v0] Error response body:', text);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('[v0] Upload error:', error);
+            console.error('[v0] Error stack:', error.stack);
+            alert('Upload failed: ' + error.message + '. Please check the browser console for more details and try again.');
+            
+            // Reset button state
+            shareBtn.textContent = 'Share';
+            shareBtn.disabled = false;
+            console.log('[v0] Share button re-enabled after error');
+        });
     });
 </script>
 {% endblock %}
