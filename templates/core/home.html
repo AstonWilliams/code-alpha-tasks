@@ -1,5 +1,5 @@
-
 {% extends 'core/base_main.html' %}
+{% load static %}
 
 {% block title %}Instagram{% endblock %}
 
@@ -12,7 +12,7 @@
                 <!-- Added clickable link to create story functionality -->
                 <a href="{% url 'core:create_story' %}" class="story-item add-story">
                     <div class="story-avatar">
-                        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" alt="Your story">
+                        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/default-avatar.jpg' %}{% endif %}" alt="Your story">
                         <div class="add-story-icon">+</div>
                     </div>
                     <span class="story-username">Your story</span>
@@ -27,7 +27,7 @@
             <article class="post" data-post-id="{{ post.id }}">
                 <header class="post-header">
                     <div class="post-user-info">
-                        <img src="{% if post.user.profile_picture %}{{ post.user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                        <img src="{% if post.user.profile_picture %}{{ post.user.profile_picture.url }}{% else %}{% static 'images/default-avatar.jpg' %}{% endif %}" 
                              alt="{{ post.user.username }}" class="post-avatar">
                         <a href="{% url 'core:profile' post.user.username %}" class="post-username">{{ post.user.username }}</a>
                     </div>
@@ -40,8 +40,17 @@
                     </button>
                 </header>
 
-                <div class="post-image">
-                    <img src="{{ post.image.url }}" alt="Post by {{ post.user.username }}">
+                <div class="post-media">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="{{ post.alt_text|default:'Post by '}}{{ post.user.username }}" class="post-image">
+                    {% elif post.video %}
+                        <video class="post-video" controls>
+                            <source src="{{ post.video.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% else %}
+                        <img src="{% static 'images/placeholder.png' %}" alt="No media available" class="post-image">
+                    {% endif %}
                 </div>
 
                 <div class="post-actions">
@@ -113,7 +122,7 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="user-info">
-            <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+            <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/default-avatar.jpg' %}{% endif %}" 
                  alt="{{ user.username }}" class="sidebar-avatar">
             <div class="user-details">
                 <a href="{% url 'core:profile' user.username %}" class="sidebar-username">{{ user.username }}</a>
@@ -129,7 +138,7 @@
             
             {% for suggested_user in suggested_users %}
             <div class="suggestion-item" data-username="{{ suggested_user.username }}">
-                <img src="{% if suggested_user.profile_picture %}{{ suggested_user.profile_picture.url }}{% else %}/static/images/default-avatar.jpg{% endif %}" 
+                <img src="{% if suggested_user.profile_picture %}{{ suggested_user.profile_picture.url }}{% else %}{% static 'images/default-avatar.jpg' %}{% endif %}" 
                      alt="{{ suggested_user.username }}" class="suggestion-avatar">
                 <div class="suggestion-info">
                     <a href="{% url 'core:profile' suggested_user.username %}" class="suggestion-username">{{ suggested_user.username }}</a>
