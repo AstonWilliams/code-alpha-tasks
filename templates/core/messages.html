@@ -132,9 +132,10 @@
                 </div>
                 
                 <div class="chat-actions">
-                    <button class="chat-action-btn">
+                    <button class="chat-action-btn" onclick="toggleTheme()">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
                         </svg>
                     </button>
                     <button class="chat-action-btn">
@@ -167,11 +168,15 @@
                         </svg>
                     </button>
                     
-                    <input type="text" 
-                           placeholder="Message..." 
-                           class="message-input" 
-                           id="messageInput"
-                           maxlength="1000">
+                    <div class="message-input-wrapper">
+                        <input type="text" 
+                               placeholder="Message..." 
+                               class="message-input" 
+                               id="messageInput"
+                               maxlength="1000"
+                               oninput="updateCharCounter()">
+                        <div class="message-char-counter" id="charCounter">0/1000</div>
+                    </div>
                     
                     <button class="emoji-btn">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -243,6 +248,31 @@
     let currentConversationId = {% if conversations %}{{ conversations.first.id }}{% else %}null{% endif %};
     let selectedRecipients = [];
 
+    function updateCharCounter() {
+        const messageInput = document.getElementById('messageInput');
+        const charCounter = document.getElementById('charCounter');
+        const currentLength = messageInput.value.length;
+        const maxLength = 1000;
+        
+        charCounter.textContent = `${currentLength}/${maxLength}`;
+        
+        // Update styling based on character count
+        charCounter.classList.remove('warning', 'error');
+        if (currentLength > maxLength * 0.9) {
+            charCounter.classList.add('error');
+        } else if (currentLength > maxLength * 0.8) {
+            charCounter.classList.add('warning');
+        }
+        
+        // Update send button state
+        const sendBtn = document.getElementById('sendBtn');
+        if (messageInput.value.trim() && currentLength <= maxLength) {
+            sendBtn.classList.add('active');
+        } else {
+            sendBtn.classList.remove('active');
+        }
+    }
+
     // Load messages for current conversation
     if (currentConversationId) {
         loadMessages(currentConversationId);
@@ -281,22 +311,21 @@
                             ${data.messages.map(message => `
                                 <div class="message ${message.sender_id === {{ user.id }} ? 'sent' : 'received'}">
                                     <div class="message-content">${message.text}</div>
-                                    <div class="message-time">${message.time}</div>
+                                    <div class="message-time">${formatMessageTime(message.created_at)}</div>
                                 </div>
                             `).join('')}
                         </div>
                     `;
                 } else {
-                    // Show placeholder messages for demo
                     messagesArea.innerHTML = `
                         <div class="messages-list">
                             <div class="message received">
                                 <div class="message-content">Hey! How are you?</div>
-                                <div class="message-time">2:30 PM</div>
+                                <div class="message-time">${formatMessageTime(new Date(Date.now() - 120000))}</div>
                             </div>
                             <div class="message sent">
                                 <div class="message-content">I'm good! Just working on some projects. How about you?</div>
-                                <div class="message-time">2:32 PM</div>
+                                <div class="message-time">${formatMessageTime(new Date(Date.now() - 60000))}</div>
                             </div>
                         </div>
                     `;
@@ -310,11 +339,22 @@
             });
     }
 
+    function formatMessageTime(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+        
+        if (diffInMinutes < 1) return 'now';
+        if (diffInMinutes < 60) return `${diffInMinutes}m`;
+        if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
+        return date.toLocaleDateString();
+    }
+
     function sendMessage() {
         const messageInput = document.getElementById('messageInput');
         const text = messageInput.value.trim();
         
-        if (!text || !currentConversationId) return;
+        if (!text || !currentConversationId || text.length > 1000) return;
         
         // Add message to UI immediately (optimistic update)
         const messagesArea = document.getElementById('messagesArea');
@@ -329,6 +369,7 @@
         
         messagesList.insertAdjacentHTML('beforeend', messageHtml);
         messageInput.value = '';
+        updateCharCounter();
         messagesArea.scrollTop = messagesArea.scrollHeight;
         
         // Send to server
@@ -364,22 +405,33 @@
     const sendBtn = document.getElementById('sendBtn');
 
     if (messageInput) {
-        messageInput.addEventListener('input', () => {
-            if (messageInput.value.trim()) {
-                sendBtn.classList.add('active');
-                sendBtn.textContent = 'Send';
-            } else {
-                sendBtn.classList.remove('active');
-                sendBtn.textContent = 'Send';
-            }
-        });
+        messageInput.addEventListener('input', updateCharCounter);
 
         messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && messageInput.value.trim()) {
+            if (e.key === 'Enter' && messageInput.value.trim() && messageInput.value.length <= 1000) {
                 sendMessage();
             }
         });
     }
+
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.classList.contains('light-theme') ? 'light' : 'dark';
+        
+        if (currentTheme === 'dark') {
+            body.classList.remove('dark-theme');
+            body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.classList.remove('light-theme');
+            body.classList.add('dark-theme');
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.classList.add(savedTheme + '-theme');
 
     function openNewMessageModal() {
         document.getElementById('newMessageModal').style.display = 'flex';
